@@ -9,7 +9,6 @@ import time
 import io         
 import smtplib
 from email.message import EmailMessage
-from inference_sdk import InferenceHTTPClient
 import pandas as pd
 import streamlit.components.v1 as components
 import streamlit as st

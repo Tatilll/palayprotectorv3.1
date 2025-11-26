@@ -449,56 +449,195 @@ if st.session_state.page == "login":
     
     st.markdown("</div>", unsafe_allow_html=True)
 
+
+
+# ========================================
 # ========== SIGNUP PAGE ==========
+# ========================================
 elif st.session_state.page == "signup":
+    import sqlite3
+    import hashlib
+    import json
+
     show_header()
     st.markdown('<div class="login-container">', unsafe_allow_html=True)
-
     st.markdown("### Create New Account")
 
-    user_type = st.selectbox(
-        "I am a...",
-        ["Farmer", "Admin"],
-        key="signup_user_type",
-        help="Select your account type"
-    )
-    
-    st.info(f"Creating a **{user_type}** account")
-
+    # --- Inputs ---
     username = st.text_input("Username", key="signup_username", placeholder="Choose a username")
     email = st.text_input("Email", key="signup_email", placeholder="your.email@example.com")
     phone = st.text_input("Phone Number", key="signup_phone", placeholder="+63 XXX XXX XXXX")
     password = st.text_input("Password", type="password", key="signup_password", placeholder="Create a strong password")
     confirm_password = st.text_input("Confirm Password", type="password", key="signup_confirm_password", placeholder="Re-enter your password")
-   
-    if st.button("Create Account", key="create_account"):
+    
+    # Philippine Provinces (alphabetical)
+    PROVINCES = [
+        "Abra", "Agusan del Norte", "Agusan del Sur", "Aklan", "Albay", "Antique", "Apayao", "Aurora",
+        "Basilan", "Bataan", "Batanes", "Batangas", "Benguet", "Biliran", "Bohol", "Bukidnon", "Bulacan",
+        "Cagayan", "Camarines Norte", "Camarines Sur", "Camiguin", "Capiz", "Catanduanes", "Cavite",
+        "Cebu", "Cotabato", "Davao de Oro", "Davao del Norte", "Davao del Sur", "Davao Occidental", 
+        "Davao Oriental", "Dinagat Islands", "Eastern Samar", "Guimaras", "Ifugao", "Ilocos Norte", 
+        "Ilocos Sur", "Iloilo", "Isabela", "Kalinga", "La Union", "Laguna", "Lanao del Norte", 
+        "Lanao del Sur", "Leyte", "Maguindanao", "Marinduque", "Masbate", "Misamis Occidental", 
+        "Misamis Oriental", "Mountain Province", "Negros Occidental", "Negros Oriental", "Northern Samar",
+        "Nueva Ecija", "Nueva Vizcaya", "Occidental Mindoro", "Oriental Mindoro", "Palawan", "Pampanga",
+        "Pangasinan", "Quezon", "Quirino", "Rizal", "Romblon", "Samar", "Sarangani", "Siquijor", "Sorsogon",
+        "South Cotabato", "Southern Leyte", "Sultan Kudarat", "Sulu", "Surigao del Norte", "Surigao del Sur",
+        "Tarlac", "Tawi-Tawi", "Zambales", "Zamboanga del Norte", "Zamboanga del Sur", "Zamboanga Sibugay",
+        # Metro Manila
+        "Metro Manila"
+    ]
+    
+    # Cities/Municipalities per Province (sample - you can add more)
+    MUNICIPALITIES = {
+        "Sorsogon": ["Barcelona", "Bulan", "Bulusan", "Casiguran", "Castilla", "Donsol", "Gubat", 
+                     "Irosin", "Juban", "Magallanes", "Matnog", "Pilar", "Prieto Diaz", "Santa Magdalena", 
+                     "Sorsogon City"],
+        "Albay": ["Bacacay", "Camalig", "Daraga", "Guinobatan", "Jovellar", "Legazpi City", "Libon", 
+                  "Ligao City", "Malilipot", "Malinao", "Manito", "Oas", "Pio Duran", "Polangui", 
+                  "Rapu-Rapu", "Santo Domingo", "Tabaco City", "Tiwi"],
+        "Camarines Sur": ["Baao", "Balatan", "Bato", "Bombon", "Buhi", "Bula", "Cabusao", "Calabanga",
+                         "Camaligan", "Canaman", "Caramoan", "Del Gallego", "Gainza", "Garchitorena", "Goa",
+                         "Iriga City", "Lagonoy", "Libmanan", "Lupi", "Magarao", "Milaor", "Minalabac",
+                         "Nabua", "Naga City", "Ocampo", "Pamplona", "Pasacao", "Pili", "Presentacion",
+                         "Ragay", "Sagñay", "San Fernando", "San Jose", "Sipocot", "Siruma", "Tigaon", "Tinambac"],
+        "Metro Manila": ["Caloocan", "Las Piñas", "Makati", "Malabon", "Mandaluyong", "Manila", "Marikina",
+                        "Muntinlupa", "Navotas", "Parañaque", "Pasay", "Pasig", "Pateros", "Quezon City",
+                        "San Juan", "Taguig", "Valenzuela"],
+        # Add more provinces and their municipalities here
+    }
+    
+    # Province selectbox with search
+    province = st.selectbox(
+        "Province *",
+        options=[""] + PROVINCES,
+        index=0,
+        placeholder="Select your province",
+        key="province_select",
+        help="Type to search for your province"
+    )
+    
+    # Municipality/City selectbox (depends on selected province)
+    if province and province in MUNICIPALITIES:
+        municipality = st.selectbox(
+            "Municipality / City *",
+            options=[""] + MUNICIPALITIES[province],
+            index=0,
+            placeholder="Select your municipality",
+            key="municipality_select",
+            help="Type to search for your municipality"
+        )
+    else:
+        municipality = st.text_input(
+            "Municipality / City *",
+            placeholder="e.g., San Vicente",
+            key="municipality_input",
+            help="Enter your municipality (autocomplete not available for this province yet)"
+        )
+    
+    # Barangay input
+    barangay = st.text_input(
+        "Barangay",
+        placeholder="e.g., Poblacion, San Roque, etc.",
+        key="barangay_input"
+    )
+    
+    # Street/Purok input
+    street = st.text_input(
+        "Street / Purok (Optional)",
+        placeholder="e.g., Purok 1, Main Street, etc.",
+        key="street_input"
+    )
+
+    # --- Admin Setup ---
+    st.markdown("---")
+    show_admin_key = st.checkbox(
+        "🔽 Show advanced admin setup", 
+        key="signup_admin_toggle", 
+        help="For system administrators only"
+    )
+    
+    ADMIN_SECRET_KEY = "palay_secret_2025"
+    admin_key = ""
+    
+    if show_admin_key:
+        admin_key = st.text_input(
+            "🔐 Admin Access Key", 
+            type="password", 
+            key="admin_key_input", 
+            placeholder="Enter secret admin key"
+        )
+
+    st.markdown("---")
+    
+    # --- Create Account ---
+    if st.button("✅ Create Account", key="create_account_btn", use_container_width=True, type="primary"):
+        # Validation
         if not all([username, email, phone, password, confirm_password]):
-            st.error("Please fill in all fields")
+            st.error("❌ Please fill in all required fields.")
         elif password != confirm_password:
-            st.error("Passwords do not match")
+            st.error("❌ Passwords do not match.")
+        elif len(password) < 6:
+            st.error("❌ Password must be at least 6 characters long.")
+        elif not province or not municipality:
+            st.error("❌ Province and Municipality are required.")
         else:
             try:
                 conn = sqlite3.connect("users.db")
                 cursor = conn.cursor()
-                cursor.execute('''
-                    INSERT INTO users (username, email, phone, password, user_type)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (username, email, phone, password, user_type.lower()))
-                conn.commit()
-                st.success(f"{user_type} account created successfully!")
-                st.balloons()
-                st.session_state.page = "login"
-                st.rerun()
-            except sqlite3.IntegrityError:
-                st.error("Username already exists. Please choose a different one.")
+                
+                # Check if username or email already exists
+                cursor.execute("SELECT * FROM users WHERE username = ? OR email = ?", (username, email))
+                if cursor.fetchone():
+                    st.warning("⚠️ Username or Email already exists. Please choose another.")
+                else:
+                    # Hash password
+                    hashed_pw = hashlib.sha256(password.encode()).hexdigest()
+                    
+                    # Determine user type
+                    user_type = "admin" if show_admin_key and admin_key == ADMIN_SECRET_KEY else "farmer"
+                    
+                    # Combine street and barangay for full address
+                    full_address = f"{street}, {barangay}" if street else barangay
+
+                    # Insert new user
+                    cursor.execute('''
+                        INSERT INTO users (
+                            username, email, phone, password,
+                            province, municipality, barangay,
+                            user_type
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        username, email, phone, hashed_pw,
+                        province, municipality, full_address,
+                        user_type
+                    ))
+                    conn.commit()
+
+                    # Success message
+                    if user_type == "admin":
+                        st.success("🎉 Admin account created successfully!")
+                    else:
+                        st.success("✅ Farmer account created successfully! Please log in.")
+                    
+                    st.balloons()
+                    st.session_state.page = "login"
+                    st.rerun()
+                    
+            except Exception as e:
+                st.error(f"❌ Error creating account: {e}")
             finally:
                 conn.close()
 
-    if st.button("Back to Login", key="back_to_login"):
+    # --- Back to Login ---
+    if st.button("← Back to Login", key="signup_back_to_login_btn", use_container_width=True):
         st.session_state.page = "login"
         st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
+
+
+
 
 # ========== ADMIN DASHBOARD ==========
 elif st.session_state.page == "admin_dashboard":

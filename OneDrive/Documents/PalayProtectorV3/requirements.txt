@@ -1,0 +1,7 @@
+streamlit
+inference-sdk
+opencv-python-headless
+pillow
+supabase
+python-dotenv
+

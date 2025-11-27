@@ -1,10 +1,9 @@
 streamlit
+roboflow
+opencv-python-headless
+numpy
 requests
-pillow
 supabase
 python-dotenv
-numpy
+pillow
 matplotlib
-inference-sdk
-opencv-python-headless
-supabase

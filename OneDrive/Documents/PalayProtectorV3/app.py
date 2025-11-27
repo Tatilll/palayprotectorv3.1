@@ -168,23 +168,13 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # ✅ SUPABASE CONNECTION (UPDATED)
 # ========================================
 from config import supabase
+from roboflow import Roboflow
+
+rf = Roboflow(api_key="Jr5X1FoeyfnsQjX4bM65")
+project = rf.workspace().project("palay-protectorv2-kbiqx")
+model = project.version(1).model
 
 
-
-
-from config import SUPABASE_URL, SUPABASE_KEY
-
-CLIENT = InferenceHTTPClient(
-    api_url="https://detect.roboflow.com",
-    api_key="Jr5X1FoeyfnsQjX4bM65"
-)
-
-def detect_disease(image_file):
-    with open("temp.jpg", "wb") as f:
-        f.write(image_file.getbuffer())
-
-    result = CLIENT.infer("temp.jpg", model_id="palay-protector/1")
-    return result
 
 
 
@@ -292,8 +282,7 @@ def send_otp_email(receiver_email, otp):
         print("Failed to send OTP:", e)
         return False
 
-def init_client():
-    return InferenceHTTPClient(api_url="https://serverless.roboflow.com", api_key="Jr5X1FoeyfnsQjX4bM65")
+
 
 
 
@@ -1775,53 +1764,46 @@ elif st.session_state.page == "detect":
         """, unsafe_allow_html=True)
 
     # ==============================
-    # DETECTION LOGIC WITH TRANSLATION
+    # DETECT DISEASE BUTTON
     # ==============================
     if st.button("DETECT DISEASE", key="detect_btn", use_container_width=True, type="primary"):
         if not st.session_state.preview_image:
             st.error("Please upload an image or take a photo first.")
         else:
-            with st.spinner("Analyzing image..."):
+            with st.spinner("Analyzing image ..."):
                 try:
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
                         image.save(tmp_file, format="JPEG")
                         tmp_file_path = tmp_file.name
 
-                    client = init_client()
-                    result = client.infer(tmp_file_path, model_id="palay-protectorv2-kbiqx/1")
+                    result = model.predict(tmp_file_path, confidence=40, overlap=30).json()
 
                     if result.get("predictions"):
                         prediction = result["predictions"][0]
                         disease = prediction["class"]
                         confidence = prediction["confidence"] * 100
+
                         normalized_name = normalize_disease_name(disease)
 
                         if normalized_name in DISEASE_INFO:
                             data = DISEASE_INFO[normalized_name]
-
-                            # Save to history (if not non-plant)
-                            if not data.get("is_non_plant", False):
-                                supabase.table("history").insert({
-                                    "user_id": st.session_state.user_id,
-                                    "result": normalized_name,
-                                    "severity": data["severity"],
-                                    "confidence": round(confidence, 2),
-                                    "date_detected": datetime.now().isoformat()
-                                }).execute()
-
-                            # Store detection data for persistent display
+                            
+                            # Store detection result in session state
                             st.session_state.detection_result = {
                                 "normalized_name": normalized_name,
                                 "confidence": confidence,
                                 "data": data
                             }
-
+                            
+                            st.success(f"Disease Detected: {normalized_name}")
+                            st.rerun()
                         else:
-                            st.warning("Unknown disease detected.")
+                            st.warning("Disease not found in database.")
                     else:
-                        st.error("No predictions returned from the model.")
+                        st.info("No disease detected.")
+
                 except Exception as e:
-                    st.error(f"Error during detection: {e}")
+                    st.error(f"Detection failed: {e}")
 
     # ==============================
     # DISPLAY DETECTION RESULT (PERSISTENT)
@@ -1885,8 +1867,6 @@ elif st.session_state.page == "detect":
 
     # ===== BOTTOM NAVIGATION =====
     show_bottom_nav('home')
-
-
 
 
 

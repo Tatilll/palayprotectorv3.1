@@ -4,5 +4,7 @@ pillow
 supabase
 python-dotenv
 numpy
-supabase
 matplotlib
+inference-sdk
+opencv-python-headless
+supabase

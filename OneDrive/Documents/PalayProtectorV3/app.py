@@ -28,9 +28,9 @@ import pandas as pd
 import time
 import matplotlib.pyplot as plt
 import sqlite3, hashlib, os, re
+from roboflow import Roboflow
 from config import SUPABASE_URL, SUPABASE_KEY
 from supabase import create_client, Client
-
 import streamlit as st
 
 
@@ -171,7 +171,7 @@ from config import supabase
 
 
 
-from inference_sdk import InferenceHTTPClient
+
 from config import SUPABASE_URL, SUPABASE_KEY
 
 CLIENT = InferenceHTTPClient(

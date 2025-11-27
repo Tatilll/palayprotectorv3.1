@@ -9,7 +9,6 @@ import time
 import io         
 import smtplib
 from email.message import EmailMessage
-from inference_sdk import InferenceHTTPClient
 import pandas as pd
 import streamlit.components.v1 as components
 import streamlit as st
@@ -32,6 +31,137 @@ import sqlite3, hashlib, os, re
 from config import SUPABASE_URL, SUPABASE_KEY
 from supabase import create_client, Client
 
+import streamlit as st
+
+
+st.markdown("""
+<style>
+
+/* ✅ LIGHTER SOFT GREEN BACKGROUND */
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(
+        135deg,
+        #cfe8d6 0%,   /* very light sage */
+        #dff2e5 50%,  /* soft mint center */
+        #c8e1d0 100%  /* balanced light edge */
+    ) !important;
+    padding: 0.5rem !important;
+    overflow-x: hidden !important;
+}
+
+/* Keep content readable */
+.main {
+    background: transparent !important;
+}
+
+/* Login container contrast para hindi lumubog sa green */
+.login-container {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(6px);
+    border-radius: 18px;
+    padding: 25px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Inputs styling */
+.stTextInput input {
+    background: #f3faf4 !important;
+    border: 1px solid #c7dec9 !important;
+    border-radius: 10px !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+
+import time
+import streamlit as st
+
+def show_splash_screen():
+    splash_html = """
+    <style>
+    .splash-container {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #1b5e20, #66bb6a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        z-index: 9999;
+        animation: fadeOut 4s forwards;
+    }
+
+    .splash-logo {
+        width: 120px;
+        animation: float 2s ease-in-out infinite;
+    }
+
+    .splash-title {
+        color: white;
+        font-size: 32px;
+        font-weight: 800;
+        margin-top: 20px;
+        letter-spacing: 2px;
+        opacity: 0;
+        animation: fadeIn 2s forwards 0.8s;
+    }
+
+    .loader {
+        margin-top: 30px;
+        width: 50px;
+        height: 50px;
+        border: 5px solid rgba(255,255,255,0.3);
+        border-top: 5px solid #fff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    @keyframes float {
+        0%,100% { transform: translateY(0); }
+        50% { transform: translateY(-12px); }
+    }
+
+    @keyframes fadeIn {
+        to { opacity: 1; }
+    }
+
+    @keyframes fadeOut {
+        0% {opacity:1;}
+        100% {opacity:0; visibility:hidden;}
+    }
+    </style>
+
+    <div class="splash-container">
+        <img src="https://cdn-icons-png.flaticon.com/128/2095/2095652.png" class="splash-logo">
+        <div class="splash-title">PALAY PROTECTOR</div>
+        <div class="loader"></div>
+    </div>
+    """
+    st.markdown(splash_html, unsafe_allow_html=True)
+
+
+
+
+if "splash_shown" not in st.session_state:
+    st.session_state.splash_shown = True
+    show_splash_screen()
+    time.sleep(4)  # Duration of splash (seconds)
+
+
+from supabase import create_client, Client
+
+SUPABASE_URL = "https://sgaicxkbbbgyblfiudum.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNnYWljeGtiYmJneWJsZml1ZHVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1ODgyNzAsImV4cCI6MjA3ODE2NDI3MH0.yoHhNjsxPq2equ6-2ZKBW2KmXmvNSKWhD4JlB0TeNHM"
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 
 
 # ========================================
@@ -41,6 +171,20 @@ from config import supabase
 
 
 
+from inference_sdk import InferenceHTTPClient
+from config import SUPABASE_URL, SUPABASE_KEY
+
+CLIENT = InferenceHTTPClient(
+    api_url="https://detect.roboflow.com",
+    api_key="Jr5X1FoeyfnsQjX4bM65"
+)
+
+def detect_disease(image_file):
+    with open("temp.jpg", "wb") as f:
+        f.write(image_file.getbuffer())
+
+    result = CLIENT.infer("temp.jpg", model_id="palay-protector/1")
+    return result
 
 
 
@@ -149,7 +293,7 @@ def send_otp_email(receiver_email, otp):
         return False
 
 def init_client():
-    return InferenceHTTPClient(api_url="https://serverless.roboflow.com", api_key="KajReyLpzYwgJ8fJ8sVd")
+    return InferenceHTTPClient(api_url="https://serverless.roboflow.com", api_key="Jr5X1FoeyfnsQjX4bM65")
 
 
 
@@ -911,279 +1055,279 @@ elif st.session_state.page == "home":
     import streamlit.components.v1 as components
     from datetime import datetime, timedelta
 
-    # ======  PAGE STYLING ======
+# ======  PAGE STYLING ======
     st.markdown("""
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
-        /* Global Reset & Base */
-        * {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        
-        .main .block-container {
-            max-width: 1100px;
-            padding: 2rem 1.5rem;
-        }
-        
-        /* Hero Header Section */
-        .hero-section {
-            text-align: center;
-            padding: 2rem 0 2.5rem;
-            position: relative;
-        }
-        
-        .avatar-container {
-            margin-bottom: 1.5rem;
-            position: relative;
-            display: inline-block;
-        }
-        
-        .avatar-circle {
-            width: 90px;
-            height: 90px;
-            background: linear-gradient(135deg, #A8E6A1 0%, #7BC96F 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto;
-            box-shadow: 0 8px 24px rgba(46, 125, 50, 0.2);
-            position: relative;
-            animation: pulse-subtle 3s ease-in-out infinite;
-        }
-        
-        @keyframes pulse-subtle {
-            0%, 100% { box-shadow: 0 8px 24px rgba(46, 125, 50, 0.2); }
-            50% { box-shadow: 0 8px 32px rgba(46, 125, 50, 0.3); }
-        }
-        
-        .avatar-icon {
-            font-size: 48px;
-        }
-        
-        .welcome-header {
-            font-size: 32px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.5px;
-        }
-        
-        .welcome-username {
-            background: linear-gradient(135deg, #4CAF50 0%, #2e7d32 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .welcome-subtitle {
-            font-size: 16px;
-            color: #6c757d;
-            font-weight: 400;
-            margin-top: 0.5rem;
-        }
-        
-        /* Feature Cards Section */
-        .features-section {
-            margin: 2.5rem 0;
-        }
-        
-        .feature-card-modern {
-            background: linear-gradient(135deg, #A8E6A1 0%, #8FD987 100%);
-            border-radius: 24px;
-            padding: 2rem;
-            box-shadow: 0 8px 24px rgba(46, 125, 50, 0.15);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            min-height: 280px;
-        }
-        
-        .feature-card-modern::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 5px;
-            background: linear-gradient(90deg, #4CAF50, #2e7d32);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        
-        .feature-card-modern:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 16px 40px rgba(46, 125, 50, 0.25);
-        }
-        
-        .feature-card-modern:hover::before {
-            opacity: 1;
-        }
-        
-        .feature-icon-wrapper {
-            width: 85px;
-            height: 85px;
-            background: white;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.25rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        .feature-icon-wrapper img {
-            width: 55px;
-            height: 55px;
-        }
-        
-        .feature-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1b5e20;
-            margin-bottom: 0.5rem;
-            text-align: center;
-        }
-        
-        .feature-description {
-            font-size: 14px;
-            color: #2d5016;
-            text-align: center;
-            margin-bottom: 1.25rem;
-            line-height: 1.5;
-            flex-grow: 1;
-        }
-        
-        /* Premium Button Styling */
-        div.stButton > button {
-            background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
-            color: white;
-            font-weight: 600;
-            font-size: 15px;
-            border: none;
-            border-radius: 12px;
-            height: 48px;
-            width: 100% !important;
-            margin: 0;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-        
-        div.stButton > button:hover {
-            background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
-        }
-        
-        div.stButton > button:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
-        }
-        
-        /* Insights Section */
-        .insights-section {
-            background: linear-gradient(135deg, #ffffff 0%, #f1f8e9 100%);
-            border-radius: 20px;
-            padding: 1.75rem;
-            margin: 2rem 0 3rem 0;
-            border-left: 5px solid #4CAF50;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-        }
-        
-        .insights-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 1rem;
-        }
-        
-        .insights-icon {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #4CAF50, #2e7d32);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-        
-        .insights-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #2e7d32;
-            margin: 0;
-        }
-        
-        .insights-content {
-            font-size: 15px;
-            color: #555;
-            line-height: 1.7;
-        }
-        
-        .insights-highlight {
-            background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-weight: 600;
-            color: #f57f17;
-        }
-        
-        /* Stats Badge */
-        .stats-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: white;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #2e7d32;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            margin-top: 0.75rem;
-        }
-        
-        /* Responsive Design */
-        @media (max-width: 768px) {
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+            
+            /* Global Reset & Base */
+            * {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            }
+            
+            .main .block-container {
+                max-width: 1100px;
+                padding: 2rem 1.5rem;
+            }
+            
+            /* Hero Header Section */
+            .hero-section {
+                text-align: center;
+                padding: 2rem 0 2.5rem;
+                position: relative;
+            }
+            
+            .avatar-container {
+                margin-bottom: 1.5rem;
+                position: relative;
+                display: inline-block;
+            }
+            
+            .avatar-circle {
+                width: 90px;
+                height: 90px;
+                background: linear-gradient(135deg, #A8E6A1 0%, #7BC96F 100%);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto;
+                box-shadow: 0 8px 24px rgba(46, 125, 50, 0.2);
+                position: relative;
+                animation: pulse-subtle 3s ease-in-out infinite;
+            }
+            
+            @keyframes pulse-subtle {
+                0%, 100% { box-shadow: 0 8px 24px rgba(46, 125, 50, 0.2); }
+                50% { box-shadow: 0 8px 32px rgba(46, 125, 50, 0.3); }
+            }
+            
+            .avatar-icon {
+                font-size: 48px;
+            }
+            
             .welcome-header {
-                font-size: 26px;
+                font-size: 32px;
+                font-weight: 800;
+                background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                margin-bottom: 0.5rem;
+                letter-spacing: -0.5px;
+            }
+            
+            .welcome-username {
+                background: linear-gradient(135deg, #4CAF50 0%, #2e7d32 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+            
+            .welcome-subtitle {
+                font-size: 16px;
+                color: #6c757d;
+                font-weight: 400;
+                margin-top: 0.5rem;
+            }
+            
+            /* Feature Cards Section */
+            .features-section {
+                margin: 2.5rem 0;
             }
             
             .feature-card-modern {
-                min-height: 220px;
+                background: linear-gradient(135deg, #A8E6A1 0%, #8FD987 100%);
+                border-radius: 24px;
+                padding: 2rem;
+                box-shadow: 0 8px 24px rgba(46, 125, 50, 0.15);
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+                position: relative;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                min-height: 280px;
             }
-        }
-        
-        /* Smooth Animations */
-        @keyframes fadeInUp {
-            from {
+            
+            .feature-card-modern::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 5px;
+                background: linear-gradient(90deg, #4CAF50, #2e7d32);
                 opacity: 0;
-                transform: translateY(20px);
+                transition: opacity 0.3s;
             }
-            to {
+            
+            .feature-card-modern:hover {
+                transform: translateY(-8px);
+                box-shadow: 0 16px 40px rgba(46, 125, 50, 0.25);
+            }
+            
+            .feature-card-modern:hover::before {
                 opacity: 1;
-                transform: translateY(0);
             }
-        }
-        
-        .hero-section,
-        .weather-card,
-        .features-section,
-        .insights-section {
-            animation: fadeInUp 0.6s ease-out;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+            
+            .feature-icon-wrapper {
+                width: 85px;
+                height: 85px;
+                background: white;
+                border-radius: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 1.25rem;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+            
+            .feature-icon-wrapper img {
+                width: 55px;
+                height: 55px;
+            }
+            
+            .feature-title {
+                font-size: 20px;
+                font-weight: 700;
+                color: #1b5e20;
+                margin-bottom: 0.5rem;
+                text-align: center;
+            }
+            
+            .feature-description {
+                font-size: 14px;
+                color: #2d5016;
+                text-align: center;
+                margin-bottom: 1.25rem;
+                line-height: 1.5;
+                flex-grow: 1;
+            }
+            
+            /* Premium Button Styling */
+            div.stButton > button {
+                background: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%);
+                color: white;
+                font-weight: 600;
+                font-size: 15px;
+                border: none;
+                border-radius: 12px;
+                height: 48px;
+                width: 100% !important;
+                margin: 0;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+                letter-spacing: 0.5px;
+                text-transform: uppercase;
+            }
+            
+            div.stButton > button:hover {
+                background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
+            }
+            
+            div.stButton > button:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 8px rgba(46, 125, 50, 0.3);
+            }
+            
+            /* Insights Section */
+            .insights-section {
+                background: linear-gradient(135deg, #ffffff 0%, #f1f8e9 100%);
+                border-radius: 20px;
+                padding: 1.75rem;
+                margin: 2rem 0 3rem 0;
+                border-left: 5px solid #4CAF50;
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            }
+            
+            .insights-header {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 1rem;
+            }
+            
+            .insights-icon {
+                width: 32px;
+                height: 32px;
+                background: linear-gradient(135deg, #4CAF50, #2e7d32);
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 18px;
+            }
+            
+            .insights-title {
+                font-size: 20px;
+                font-weight: 700;
+                color: #2e7d32;
+                margin: 0;
+            }
+            
+            .insights-content {
+                font-size: 15px;
+                color: #555;
+                line-height: 1.7;
+            }
+            
+            .insights-highlight {
+                background: linear-gradient(135deg, #fff9c4 0%, #fff59d 100%);
+                padding: 2px 8px;
+                border-radius: 6px;
+                font-weight: 600;
+                color: #f57f17;
+            }
+            
+            /* Stats Badge */
+            .stats-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                background: white;
+                padding: 6px 14px;
+                border-radius: 20px;
+                font-size: 13px;
+                font-weight: 600;
+                color: #2e7d32;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                margin-top: 0.75rem;
+            }
+            
+            /* Responsive Design */
+            @media (max-width: 768px) {
+                .welcome-header {
+                    font-size: 26px;
+                }
+                
+                .feature-card-modern {
+                    min-height: 220px;
+                }
+            }
+            
+            /* Smooth Animations */
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .hero-section,
+            .weather-card,
+            .features-section,
+            .insights-section {
+                animation: fadeInUp 0.6s ease-out;
+            }
+        </style>
+        """, unsafe_allow_html=True)
 
     # ===== HERO SECTION =====
     show_header()
@@ -1217,100 +1361,117 @@ elif st.session_state.page == "home":
     forecast = get_7day_forecast(CITY)
 
     if forecast:
-        weather_html = f"""
-        <style>
-        .weather-box {{
-            background: linear-gradient(135deg, #ffffff 0%, #f8fdf5 100%);
-            border-radius: 20px;
-            padding: 1.5rem 1.5rem 1.8rem 1.5rem;
-            margin: 1.5rem auto;
-            max-width: 900px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(46, 125, 50, 0.1);
-        }}
-        .weather-title {{
-            font-size: 18px;
-            font-weight: 700;
-            color: #2e7d32;
-            text-align: center;
-            margin-bottom: 1.2rem;
-        }}
-        .forecast-container {{
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding-bottom: 15px;
-            scrollbar-width: thin;
-            scrollbar-color: #4CAF50 #f1f8e9;
-        }}
-        .forecast-container::-webkit-scrollbar {{
-            height: 8px;
-        }}
-        .forecast-container::-webkit-scrollbar-track {{
-            background: #f1f8e9;
-            border-radius: 10px;
-        }}
-        .forecast-container::-webkit-scrollbar-thumb {{
-            background: #4CAF50;
-            border-radius: 10px;
-        }}
-        .forecast-container::-webkit-scrollbar-thumb:hover {{
-            background: #2e7d32;
-        }}
-        .forecast-card {{
-            background: linear-gradient(135deg, #f1f8e9 0%, #ffffff 100%);
-            border-radius: 16px;
-            padding: 0.85rem 0.65rem;
-            min-width: 80px;
-            flex-shrink: 0;
-            text-align: center;
-            box-shadow: 0 2px 8px rgba(46, 125, 50, 0.1);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(46, 125, 50, 0.08);
-        }}
-        .forecast-card:hover {{
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(46, 125, 50, 0.2);
-        }}
-        .forecast-card img {{
-            width: 42px;
-            height: 42px;
-            display: block;
-            margin: 6px auto;
-        }}
-        .forecast-day {{
-            font-size: 13px;
-            font-weight: 700;
-            color: #2e7d32;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }}
-        .forecast-temp {{
-            font-size: 12px;
-            color: #555;
-            margin-top: 6px;
-            font-weight: 600;
-        }}
-        </style>
+                 weather_html = f"""
+<style>
 
-        <div class="weather-box">
-            <div class="weather-title"> 7-Day Forecast ({CITY}, {COUNTRY})</div>
-            <div class="forecast-container">
+/* ===== CLEAN MAIN WEATHER PANEL ===== */
+.weather-box {{
+    background: linear-gradient(135deg, #f6fff8 0%, #ffffff 100%);
+    border-radius: 36px;
+    padding: 2.5rem 2rem;
+    margin: 2rem auto;
+    max-width: 900px;
+    border: 3px solid rgba(46,125,50,0.35);
+    box-shadow: 0 15px 35px rgba(46,125,50,0.2);
+}}
+
+/* TITLE */
+.weather-title {{
+    font-size: 18px;
+    font-weight: 700;
+    color: #2e7d32;
+    text-align: center;
+    margin-bottom: 1.4rem;
+}}
+
+/* ✅ ROW STRIP - SCROLLABLE NA */
+.forecast-container {{
+    display: flex;
+    gap: 14px;
+    padding: 1rem;
+
+    overflow-x: auto;        /* ✅ ITO ANG NAGPAPASLIDE */
+    overflow-y: hidden;
+    justify-content: flex-start;   /* ❌ HUWAG CENTER */
+}}
+
+/* scrollbar style */
+.forecast-container::-webkit-scrollbar {{
+    height: 8px;
+}}
+
+.forecast-container::-webkit-scrollbar-thumb {{
+    background: #4CAF50;
+    border-radius: 10px;
+}}
+
+/* INDIVIDUAL DAY CARDS */
+.forecast-card {{
+    background: #ffffff;
+    border-radius: 22px;
+    padding: 1rem;
+    min-width: 95px;
+    text-align: center;
+    border: 2px solid #5fbf68;
+    box-shadow: 0 4px 14px rgba(46,125,50,0.15);
+    transition: 0.3s ease;
+    flex-shrink: 0;   /* ✅ PARA HINDI MAG COLLAPSE */
+}}
+
+.forecast-card:hover {{
+    transform: translateY(-5px);
+    border-color: #2e7d32;
+}}
+
+.forecast-card img {{
+    width: 44px;
+    height: 44px;
+    margin: 6px auto;
+}}
+
+.forecast-day {{
+    font-size: 13px;
+    font-weight: 700;
+    color: #2e7d32;
+}}
+
+.forecast-temp {{
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+    margin-top: 5px;
+}}
+
+</style>
+
+<div class="weather-box">
+    <div class="weather-title">
+        7-Day Forecast ({CITY}, {COUNTRY})
+    </div>
+    <div class="forecast-container">
+"""
+
+    for day in forecast:
+        icon_url = f"https://openweathermap.org/img/wn/{day['icon']}@2x.png"
+        weather_html += f"""
+        <div class="forecast-card">
+            <div class="forecast-day">{day['day_short']}</div>
+            <img src="{icon_url}">
+            <div class="forecast-temp">{day['temp_max']}° / {day['temp_min']}°</div>
+        </div>
         """
 
-        for day in forecast:
-            icon_url = f"https://openweathermap.org/img/wn/{day['icon']}@2x.png"
-            weather_html += f"""
-            <div class="forecast-card">
-                <div class="forecast-day">{day['day_short']}</div>
-                <img src="{icon_url}">
-                <div class="forecast-temp">{day['temp_max']}° / {day['temp_min']}°</div>
-            </div>
-            """
+    weather_html += """
+    </div>
+</div>
+"""
 
-        weather_html += "</div></div>"
 
-        components.html(weather_html, height=200, scrolling=False)
+    components.html(weather_html, height=320, scrolling=False)
+
+
+
+
 
     # ===== FEATURE CARDS SECTION =====
     st.markdown('<div class="features-section">', unsafe_allow_html=True)
@@ -1324,7 +1485,7 @@ elif st.session_state.page == "home":
             </div>
             <div class="feature-title">Detect Disease</div>
             <div class="feature-description">
-                Upload images of your palay plants and get instant AI-powered disease detection
+                Upload images of your palay plants and get instant AI-powered disease detection results to protect your crops.
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1378,7 +1539,8 @@ elif st.session_state.page == "home":
 
 
 
-# ========== DETECTION SCREEN - FINAL VERSION (Supabase Database with Severity & Description) ==========
+
+# ========== DETECTION SCREEN - WITH TAGALOG TRANSLATION IN RESULT CARD ==========
 elif st.session_state.page == "detect":
 
     from datetime import datetime
@@ -1388,60 +1550,125 @@ elif st.session_state.page == "detect":
     import base64, io, tempfile
     from PIL import Image
 
+    # Initialize translation state for detection result
+    if 'result_lang' not in st.session_state:
+        st.session_state.result_lang = "english"
+
     # --- Supabase connection ---
     supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
     # ==============================
-    # DISEASE INFORMATION DATABASE
+    # DISEASE INFO WITH TAGALOG
     # ==============================
     DISEASE_INFO = {
-        "Leaf Smut": {
-            "description": "A fungal disease causing small black spots on leaves, reducing photosynthesis and plant vigor.",
-            "severity": "Moderate", "severity_color": "#ff9800"
-        },
-        "Leaf Scald": {
-            "description": "Creates large lesions with white and brown bands, severely impacting leaf function and reducing yield.",
-            "severity": "High", "severity_color": "#f44336"
-        },
-        "Narrow Brown Leaf Spot": {
-            "description": "Narrow brown lesions on leaves that can reduce grain quality and yield significantly.",
-            "severity": "Moderate", "severity_color": "#ff9800"
-        },
-        "Rice Blast": {
-            "description": "One of the most destructive rice diseases with diamond-shaped lesions. Can reduce yield by up to 50%.",
-            "severity": "High", "severity_color": "#f44336"
-        },
-        "Rice Stripes": {
-            "description": "A viral disease causing yellow to white stripes on leaves, transmitted by planthoppers and causing stunted growth.",
-            "severity": "High", "severity_color": "#f44336"
-        },
-        "Rice Tungro": {
-            "description": "A viral complex causing yellow-orange discoloration and stunting. Can cause total crop failure if not managed early.",
-            "severity": "High", "severity_color": "#f44336"
+        "Bacterial Leaf Blight": {
+            "description": "A bacterial disease causing water-soaked lesions that turn yellow to white.",
+            "severity": "High", 
+            "severity_color": "#f44336",
+            "tagalog": {
+                "description": "Isang bakteryal na sakit na nagdudulot ng basang-basa na sugat na nagiging dilaw hanggang puti.",
+                "severity": "Mataas"
+            }
         },
         "Brown Spot": {
-            "description": "Brown spot disease causes circular brown lesions on leaves, reducing photosynthetic area and grain quality.",
-            "severity": "Moderate", "severity_color": "#ff9800"
+            "description": "Circular brown lesions that reduce photosynthesis and grain quality.",
+            "severity": "Moderate", 
+            "severity_color": "#ff9800",
+            "tagalog": {
+                "description": "Bilog na kayumangging sugat na bumababa ang photosynthesis at kalidad ng butil.",
+                "severity": "Katamtaman"
+            }
         },
-        "Rice Hispa": {
-            "description": "Rice Hispa is an insect pest that scrapes chlorophyll from the leaf surface, leaving white streaks that reduce photosynthesis.",
-            "severity": "Moderate", "severity_color": "#ff9800"
+        "False Smut": {
+            "description": "Fungal balls replace grains, spreading quickly in humid conditions.",
+            "severity": "Moderate", 
+            "severity_color": "#ff9800",
+            "tagalog": {
+                "description": "Bola ng fungus na pumapalit sa butil, mabilis na kumakalat sa mahalumigmig na kondisyon.",
+                "severity": "Katamtaman"
+            }
         },
         "Healthy Rice": {
-            "description": "No disease detected. Your rice plant appears healthy with no visible signs of infection.",
-            "severity": "None", "severity_color": "#4CAF50"
+            "description": "Your rice plant appears healthy with no disease symptoms.",
+            "severity": "None", 
+            "severity_color": "#4CAF50",
+            "tagalog": {
+                "description": "Ang iyong palay ay malusog at walang sintomas ng sakit.",
+                "severity": "Wala"
+            }
         },
-        "Non Plant Object": {
-            "description": "Please retake or upload again because this image is not a rice plant image.",
-            "severity": "N/A", "severity_color": "#9e9e9e", "is_non_plant": True
+        "Leaf Blast": {
+            "description": "Diamond-shaped lesions that can cause up to 50% yield loss.",
+            "severity": "High", 
+            "severity_color": "#f44336",
+            "tagalog": {
+                "description": "Hugis-diyamante na sugat na maaaring magdulot ng hanggang 50% na pagkalugi sa ani.",
+                "severity": "Mataas"
+            }
         },
-        "Bacterial Leaf Blight": {
-            "description": "A bacterial disease causing water-soaked lesions that turn yellow to white. Can cause severe yield loss in tropical areas.",
-            "severity": "High", "severity_color": "#f44336"
+        "Leaf Scald": {
+            "description": "Large white-centered lesions reducing leaf function and yield.",
+            "severity": "High", 
+            "severity_color": "#f44336",
+            "tagalog": {
+                "description": "Malalaking sugat na may puting gitna na bumababa ang gawain ng dahon at ani.",
+                "severity": "Mataas"
+            }
+        },
+        "Narrow Brown Spot": {
+            "description": "Narrow brown streaks that lower grain quality and reduce yield.",
+            "severity": "Moderate", 
+            "severity_color": "#ff9800",
+            "tagalog": {
+                "description": "Makitid na kayumangging guhit na bumababa ang kalidad ng butil at ani.",
+                "severity": "Katamtaman"
+            }
+        },
+        "Neck Blast": {
+            "description": "Infects the panicle neck, leading to poor grain filling.",
+            "severity": "High", 
+            "severity_color": "#f44336",
+            "tagalog": {
+                "description": "Nahawahan ang leeg ng panicle, nangunguna sa mahinang pagpuno ng butil.",
+                "severity": "Mataas"
+            }
+        },
+        "Rice Hispa": {
+            "description": "Insect pest scraping chlorophyll and leaving white streaks.",
+            "severity": "Moderate", 
+            "severity_color": "#ff9800",
+            "tagalog": {
+                "description": "Peste ng insekto na nag-aalis ng chlorophyll at nag-iiwan ng puting guhit.",
+                "severity": "Katamtaman"
+            }
+        },
+        "Rice Tungro": {
+            "description": "A viral disease causing orange-yellow leaves and stunting.",
+            "severity": "High", 
+            "severity_color": "#f44336",
+            "tagalog": {
+                "description": "Viral na sakit na nagdudulot ng orange-dilaw na dahon at pagkasunog.",
+                "severity": "Mataas"
+            }
         },
         "Sheath Blight": {
-            "description": "A fungal disease causing irregular lesions on leaf sheaths, leading to lodging and yield reduction.",
-            "severity": "Moderate", "severity_color": "#ff9800"
+            "description": "Irregular sheath lesions causing lodging and yield loss.",
+            "severity": "Moderate", 
+            "severity_color": "#ff9800",
+            "tagalog": {
+                "description": "Hindi regular na sugat sa balat na nagdudulot ng pagbagsak at pagkalugi sa ani.",
+                "severity": "Katamtaman"
+            }
+        },
+        "Non Plant Object": {
+            "description": "This is not a rice plant image. Please upload a valid rice leaf.",
+            "severity": "N/A", 
+            "severity_color": "#9e9e9e",
+            "is_non_plant": True,
+            "tagalog": {
+                "description": "Hindi ito larawan ng palay. Mangyaring mag-upload ng wastong dahon ng palay.",
+                "severity": "N/A"
+            }
         }
     }
 
@@ -1449,22 +1676,21 @@ elif st.session_state.page == "detect":
     # NORMALIZATION FUNCTION
     # ==============================
     def normalize_disease_name(name):
-        """Normalize prediction class names to match DISEASE_INFO keys."""
-        name = name.strip().replace("00 ", "").replace("00", "").title()
-        if "Hispa" in name:
-            return "Rice Hispa"
-        if "Healthy" in name:
-            return "Healthy Rice"
-        if "Shealth" in name:
-            return "Sheath Blight"
-        if "Brownspot" in name:
-            return "Brown Spot"
-        if "Non Plant" in name or "Non-Plant" in name:
-            return "Non Plant Object"
+        name = name.strip().replace("_", " ").replace("-", " ").title()
+
+        if "Healthy" in name: return "Healthy Rice"
+        if "Hispa" in name: return "Rice Hispa"
+        if "Narrow" in name: return "Narrow Brown Spot"
+        if "Neck" in name: return "Neck Blast"
+        if "Leaf Blast" in name or "Blast" in name: return "Leaf Blast"
+        if "Shealth" in name or "Sheath" in name: return "Sheath Blight"
+        if "False" in name: return "False Smut"
+        if "Non" in name: return "Non Plant Object"
+
         return name
 
     # ==============================
-    # PAGE UI STYLING
+    # PAGE UI
     # ==============================
     st.markdown("""
         <style>
@@ -1482,8 +1708,14 @@ elif st.session_state.page == "detect":
         </style>
     """, unsafe_allow_html=True)
 
+    st.markdown("""
+        <style>
+            [data-testid="stFileUploader"] div:last-child { display: none !important; }
+        </style>
+    """, unsafe_allow_html=True)
+
     # ==============================
-    # PAGE CONTENT
+    # PAGE HEADER
     # ==============================
     st.markdown("""
     <div style='text-align: center; margin-bottom: 20px;'>
@@ -1492,6 +1724,9 @@ elif st.session_state.page == "detect":
     </div>
     """, unsafe_allow_html=True)
 
+    # ==============================
+    # IMAGE UPLOAD
+    # ==============================
     if 'preview_image' not in st.session_state:
         st.session_state.preview_image = None
 
@@ -1506,6 +1741,9 @@ elif st.session_state.page == "detect":
             st.session_state.preview_image = camera_photo
             st.rerun()
 
+    # ==============================
+    # IMAGE PREVIEW
+    # ==============================
     if st.session_state.preview_image:
         image = Image.open(st.session_state.preview_image)
         buffered = io.BytesIO()
@@ -1525,6 +1763,7 @@ elif st.session_state.page == "detect":
             st.session_state.preview_image = None
             st.session_state.pop('file_upload', None)
             st.session_state.pop('camera_input', None)
+            st.session_state.pop('detection_result', None)  # Clear detection result too
             st.rerun()
     else:
         st.markdown("""
@@ -1536,7 +1775,7 @@ elif st.session_state.page == "detect":
         """, unsafe_allow_html=True)
 
     # ==============================
-    # DETECTION LOGIC
+    # DETECTION LOGIC WITH TRANSLATION
     # ==============================
     if st.button("DETECT DISEASE", key="detect_btn", use_container_width=True, type="primary"):
         if not st.session_state.preview_image:
@@ -1549,7 +1788,7 @@ elif st.session_state.page == "detect":
                         tmp_file_path = tmp_file.name
 
                     client = init_client()
-                    result = client.infer(tmp_file_path, model_id="palayprotector-ver-2-gmeok/1")
+                    result = client.infer(tmp_file_path, model_id="palay-protectorv2-kbiqx/1")
 
                     if result.get("predictions"):
                         prediction = result["predictions"][0]
@@ -1558,51 +1797,24 @@ elif st.session_state.page == "detect":
                         normalized_name = normalize_disease_name(disease)
 
                         if normalized_name in DISEASE_INFO:
-                            disease_data = DISEASE_INFO[normalized_name]
+                            data = DISEASE_INFO[normalized_name]
 
-                            if not disease_data.get('is_non_plant', False):
-                                try:
-                                    severity_level = disease_data.get("severity", "Unknown")
+                            # Save to history (if not non-plant)
+                            if not data.get("is_non_plant", False):
+                                supabase.table("history").insert({
+                                    "user_id": st.session_state.user_id,
+                                    "result": normalized_name,
+                                    "severity": data["severity"],
+                                    "confidence": round(confidence, 2),
+                                    "date_detected": datetime.now().isoformat()
+                                }).execute()
 
-                                    # ✅ Save to Supabase with severity & confidence
-                                    supabase.table("history").insert({
-                                        "user_id": st.session_state.user_id,
-                                        "result": normalized_name,
-                                        "severity": severity_level,
-                                        "confidence": round(confidence, 2),
-                                        "date_detected": datetime.now().isoformat()
-                                    }).execute()
-
-                                    st.toast("✅ Detection result with severity saved to Supabase!", icon="💾")
-                                except Exception as e:
-                                    st.error(f"❌ Failed to save detection: {e}")
-
-                            # === RESULT DISPLAY ===
-                            severity_color = disease_data["severity_color"]
-                            severity = disease_data["severity"]
-                            description = disease_data["description"]
-
-                            st.markdown(f"""
-                                <div style='background:#fff;border-radius:15px;padding:25px;text-align:center;
-                                border-left:6px solid {severity_color};box-shadow:0 4px 10px rgba(0,0,0,0.1);margin-top:20px'>
-                                    <h2 style='color:#2e7d32;'>Detection Result</h2>
-                                    <h3 style='color:#b71c1c;margin-bottom:5px'>{normalized_name}</h3>
-                                    <h4 style='color:#2e7d32;margin-top:0'>{confidence:.1f}%</h4>
-                                    <div style='background-color:{severity_color};color:white;padding:6px 15px;
-                                    border-radius:12px;display:inline-block;font-weight:bold;margin:10px 0'>
-                                        Severity: {severity}
-                                    </div>
-                                    <div style='height:8px;width:80%;margin:10px auto;background-color:#e0e0e0;
-                                    border-radius:10px'>
-                                        <div style='height:100%;width:{confidence}%;background:linear-gradient(90deg,#ff9800,#4caf50);
-                                        border-radius:10px'></div>
-                                    </div>
-                                    <div style='margin-top:15px;background-color:#f8f9fa;border-radius:8px;padding:15px;
-                                    color:#424242;line-height:1.6'>
-                                        <b>About this disease:</b><br>{description}
-                                    </div>
-                                </div>
-                            """, unsafe_allow_html=True)
+                            # Store detection data for persistent display
+                            st.session_state.detection_result = {
+                                "normalized_name": normalized_name,
+                                "confidence": confidence,
+                                "data": data
+                            }
 
                         else:
                             st.warning("Unknown disease detected.")
@@ -1611,8 +1823,69 @@ elif st.session_state.page == "detect":
                 except Exception as e:
                     st.error(f"Error during detection: {e}")
 
-     # ===== BOTTOM NAVIGATION =====
+    # ==============================
+    # DISPLAY DETECTION RESULT (PERSISTENT)
+    # ==============================
+    if 'detection_result' in st.session_state and st.session_state.detection_result:
+        result_data = st.session_state.detection_result
+        normalized_name = result_data["normalized_name"]
+        confidence = result_data["confidence"]
+        data = result_data["data"]
+
+        # Get translated content based on current language
+        is_tagalog = st.session_state.result_lang == "tagalog"
+        
+        if is_tagalog:
+            result_title = "Resulta ng Pagtuklas"
+            severity_label = "Kalubhaan"
+            about_label = "Tungkol sa sakit na ito:"
+            description = data["tagalog"]["description"]
+            severity_text = data["tagalog"]["severity"]
+        else:
+            result_title = "Detection Result"
+            severity_label = "Severity"
+            about_label = "About this disease:"
+            description = data["description"]
+            severity_text = data["severity"]
+
+        # Display result card with translation buttons INSIDE
+        st.markdown(f"""
+            <div style='background:#fff;border-radius:15px;padding:25px;text-align:center;
+            border-left:6px solid {data["severity_color"]};box-shadow:0 4px 10px rgba(0,0,0,0.1);margin-top:20px'>
+                <h2 style='color:#2e7d32;'>{result_title}</h2>
+                <h3 style='color:#b71c1c;margin-bottom:5px'>{normalized_name}</h3>
+                <h4 style='color:#2e7d32;margin-top:0'>{confidence:.1f}%</h4>
+                <div style='background-color:{data["severity_color"]};color:white;padding:6px 15px;
+                border-radius:12px;display:inline-block;font-weight:bold;margin:10px 0'>
+                    {severity_label}: {severity_text}
+                </div>
+                <div style='height:8px;width:80%;margin:10px auto;background-color:#e0e0e0;
+                border-radius:10px'>
+                    <div style='height:100%;width:{confidence}%;background:linear-gradient(90deg,#ff9800,#4caf50);
+                    border-radius:10px'></div>
+                </div>
+                <div style='margin-top:15px;background-color:#f8f9fa;border-radius:8px;padding:15px;
+                color:#424242;line-height:1.6'>
+                    <b>{about_label}</b><br>{description}
+                </div>
+        """, unsafe_allow_html=True)
+
+        # Language toggle buttons INSIDE the card area
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col2:
+            if st.button("🇵🇭 Tagalog", key="btn_tl", use_container_width=True):
+                st.session_state.result_lang = "tagalog"
+                st.rerun()
+        with col3:
+            if st.button("🇬🇧 English", key="btn_en", use_container_width=True):
+                st.session_state.result_lang = "english"
+                st.rerun()
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # ===== BOTTOM NAVIGATION =====
     show_bottom_nav('home')
+
 
 
 
@@ -1752,12 +2025,7 @@ elif st.session_state.page == "history":
         except Exception as e:
             st.error(f"❌ Supabase error: {e}")
 
-    # --- BACK BUTTON ---
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button("← Back to Home", key="back_home_history", use_container_width=True, type="primary"):
-            st.session_state.page = "home"
-            st.rerun()
+    
 
 
  # ===== BOTTOM NAVIGATION =====
@@ -1955,47 +2223,73 @@ elif st.session_state.page == "profile":
 
 
 
-    # ========== DISEASE LIBRARY - LEFT ALIGNED ==========
+   # ========== DISEASE LIBRARY - WITH TAGALOG TRANSLATION ==========
 elif st.session_state.page == "library":
     
-    # Custom CSS for Library Page
+    # Initialize translation state if not exists
+    if 'translations' not in st.session_state:
+        st.session_state.translations = {}
+    
     st.markdown("""
     <style>
+
+    /* ===== FORCE WHITE BACKGROUND ===== */
+    body, .main, .stApp {
+        background-color: #ffffff !important;
+    }
+
+    section[data-testid="stSidebar"] {
+        background-color: #ffffff !important;
+    }
+
+    .block-container {
+        background-color: #ffffff !important;
+        padding-top: 2rem;
+    }
+
+    /* HEADER */
     .library-header {
         text-align: center;
         color: #2e7d32;
         margin-bottom: 20px;
     }
+
     .search-container {
         margin: 20px 0;
     }
+
+    /* CARD STYLE */
     .disease-card {
-        background: white;
-        border-left: 5px solid #4CAF50;
+        background: #ffffff;
+        border-justify: 5px solid #4CAF50;
         border-radius: 10px;
         padding: 20px;
         margin: 15px 0;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         transition: transform 0.2s;
     }
+
     .disease-card:hover {
         transform: translateY(-3px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
+
     .disease-title {
         font-size: 20px;
         font-weight: bold;
         color: #1b5e20;
         margin-bottom: 5px;
-        text-align: left;
+        text-align: justify;
     }
+
     .disease-scientific {
         font-style: italic;
         color: #6c757d;
         font-size: 14px;
         margin-bottom: 10px;
-        text-align: left;
+        text-align: justify;
     }
+
     .severity-badge {
         display: inline-block;
         padding: 4px 12px;
@@ -2004,22 +2298,27 @@ elif st.session_state.page == "library":
         font-weight: bold;
         margin-bottom: 15px;
     }
+
     .severity-high {
         background-color: #ffebee;
         color: #c62828;
     }
+
     .severity-medium {
         background-color: #fff3e0;
         color: #ef6c00;
     }
+
     .severity-low {
         background-color: #e8f5e9;
         color: #2e7d32;
     }
+
     .info-section {
         margin: 15px 0;
-        text-align: left;
+        text-align: justify;
     }
+
     .info-title {
         font-weight: bold;
         color: #2e7d32;
@@ -2027,33 +2326,41 @@ elif st.session_state.page == "library":
         margin-bottom: 8px;
         display: flex;
         align-items: center;
-        text-align: left;
+        text-align: justify;
     }
+
     .info-content {
         color: #424242;
         line-height: 1.6;
         font-size: 14px;
         padding-left: 10px;
-        text-align: left;
+        text-align: justify;
     }
+
     .tip-box {
-        background: #e8f5e9;
+        background: #f5f5f5;
         border-left: 4px solid #4CAF50;
         padding: 15px;
         border-radius: 8px;
         margin: 20px 0;
-        text-align: left;
+        text-align: justify;
     }
-    
-    /* Ensure all paragraphs are left-aligned */
+        div.stButton > button {
+        text-align: center !important;
+        justify-content: center !important;
+        padding: 12px 0 !important;
+        font-weight: 600;
+        border-radius: 12px;
+    }
+
     p {
-        text-align: left !important;
+        text-align: justify !important;
     }
-    
-    /* Left align list items */
+
     ul, li {
-        text-align: left !important;
+        text-align: justify !important;
     }
+
     </style>
     """, unsafe_allow_html=True)
     
@@ -2063,11 +2370,12 @@ elif st.session_state.page == "library":
         <p style="color: #6c757d;">Complete guide to rice plant diseases</p>
     </div>
     """, unsafe_allow_html=True)
+
     
     # Search functionality
     search = st.text_input("Search diseases...", key="disease_search", placeholder="Type disease name...")
     
-    # Enhanced disease database with detailed information - ALL 18 DISEASES
+    # Enhanced disease database with detailed information - ALL 12 DISEASES WITH TAGALOG
     diseases = [
         {
             "name": "Brown Spot",
@@ -2092,7 +2400,28 @@ elif st.session_state.page == "library":
                 "Practice proper water management",
                 "Avoid stress conditions"
             ],
-            "image": "https://apps.lucidcentral.org/ppp_v9/images/entities/rice_brown_leaf_spot_427/5390490lgpt.jpg"
+            "image": "https://apps.lucidcentral.org/ppp_v9/images/entities/rice_brown_leaf_spot_427/5390490lgpt.jpg",
+            "tagalog": {
+                "description": "Isang sakit na dulot ng fungus na karaniwan sa mga bukid na kulang sa sustansya, lalo na ang potassium.",
+                "symptoms": [
+                    "Maliliit na bilog na kayumangging batik sa mga dahon",
+                    "May dilaw na bilog sa paligid ng batik",
+                    "Nakakaapekto sa dahon at butil",
+                    "Bumababa ang kalidad at timbang ng butil"
+                ],
+                "treatment": [
+                    "Maglagay ng mancozeb o copper fungicide",
+                    "Pagbutihin ang nutrisyon ng lupa (lalo na potassium)",
+                    "Alisin ang mga nahawaang bahagi ng halaman",
+                    "Siguraduhing maayos ang drainage"
+                ],
+                "prevention": [
+                    "Panatilihing balanse ang nutrisyon ng lupa",
+                    "Gumamit ng malusog at sertipikadong binhi",
+                    "Magsagawa ng tamang pamamahala ng tubig",
+                    "Iwasan ang mga kondisyon na nakaka-stress"
+                ]
+            }
         },
         {
             "name": "Sheath Blight",
@@ -2117,7 +2446,28 @@ elif st.session_state.page == "library":
                 "Drain fields periodically",
                 "Practice crop rotation with non-host crops"
             ],
-            "image": "https://th.bing.com/th/id/R.74ee4c2cbd251001c04c8b984b754cf0?rik=x%2bM1DIRpKy7dQw&riu=http%3a%2f%2f2.bp.blogspot.com%2f_-rGxVjqS77w%2fSsQ7mTG2bnI%2fAAAAAAAAAaY%2fGEv3UJtn7eE%2fw1200-h630-p-k-no-nu%2fSHEATH%2bBLIGHT.jpg&ehk=syWAczjiAoUbiwqvNeQOi48XNm3JzXEqpGJ4wCIym8U%3d&risl=&pid=ImgRaw&r=0"
+            "image": "https://th.bing.com/th/id/R.74ee4c2cbd251001c04c8b984b754cf0?rik=x%2bM1DIRpKy7dQw&riu=http%3a%2f%2f2.bp.blogspot.com%2f_-rGxVjqS77w%2fSsQ7mTG2bnI%2fAAAAAAAAAaY%2fGEv3UJtn7eE%2fw1200-h630-p-k-no-nu%2fSHEATH%2bBLIGHT.jpg&ehk=syWAczjiAoUbiwqvNeQOi48XNm3JzXEqpGJ4wCIym8U%3d&risl=&pid=ImgRaw&r=0",
+            "tagalog": {
+                "description": "Isang malaking sakit na dulot ng fungus na lumalaki sa mainit at mahalumigmig na kondisyon na may siksik na tanim.",
+                "symptoms": [
+                    "Oval o hindi regular na sugat sa balat ng dahon",
+                    "Berde-abong sugat na may kayumangging gilid",
+                    "Nagsasama ang mga sugat at kumakalat pataas",
+                    "Pagbagsak ng halaman sa malubhang kaso"
+                ],
+                "treatment": [
+                    "Maglagay ng validamycin o hexaconazole fungicide",
+                    "Alisin ang nahawaang mga basura ng halaman pagkatapos ng ani",
+                    "Pagbutihin ang sirkulasyon ng hangin sa bukid",
+                    "Bawasan ang density ng halaman"
+                ],
+                "prevention": [
+                    "Gumamit ng tamang pagitan ng halaman",
+                    "Iwasan ang labis na nitrogen fertilization",
+                    "Pana-panahong patuyuin ang bukid",
+                    "Magsagawa ng crop rotation na hindi host"
+                ]
+            }
         },
         {
             "name": "Bacterial Leaf Blight",
@@ -2142,7 +2492,28 @@ elif st.session_state.page == "library":
                 "Balance nitrogen fertilization",
                 "Maintain proper spacing for air circulation"
             ],
-            "image": "https://toagriculture.com/wp-content/uploads/2022/12/Bacterial-blight-disease-of-rice-Soci.jpg"
+            "image": "https://toagriculture.com/wp-content/uploads/2022/12/Bacterial-blight-disease-of-rice-Soci.jpg",
+            "tagalog": {
+                "description": "Isang seryosong bakteryal na sakit na nakakaapekto sa palay sa lahat ng yugto ng paglaki, lalo na sa tag-ulan.",
+                "symptoms": [
+                    "Basang-basa na sugat sa dulo at gilid ng dahon",
+                    "Paninilaw ng nahawaang dahon",
+                    "Paglanta ng punla (kresek symptom)",
+                    "Puting bakteryal na dumadaloy sa dahon"
+                ],
+                "treatment": [
+                    "Maglagay ng copper-based bactericide",
+                    "Alisin at sirain ang nahawaang halaman",
+                    "Pagbutihin ang drainage ng bukid",
+                    "Gumamit ng sertipikadong binhing walang sakit"
+                ],
+                "prevention": [
+                    "Magtanim ng resistant na uri",
+                    "Iwasan ang pagkapinsala ng halaman",
+                    "Balansehin ang nitrogen fertilization",
+                    "Panatilihing tamang pagitan para sa daloy ng hangin"
+                ]
+            }
         },
         {
             "name": "Healthy Rice",
@@ -2167,7 +2538,28 @@ elif st.session_state.page == "library":
                 "Maintain balanced nutrition",
                 "Ensure proper water management"
             ],
-            "image": "https://thumbs.dreamstime.com/b/close-up-rice-plant-leaves-dew-drops-190913252.jpg"
+            "image": "https://thumbs.dreamstime.com/b/close-up-rice-plant-leaves-dew-drops-190913252.jpg",
+            "tagalog": {
+                "description": "Malusog na palay na nagpapakita ng normal na paglaki at pag-unlad na walang anumang sintomas ng sakit.",
+                "symptoms": [
+                    "Maliwanag na berdeng dahon",
+                    "Pantay na pattern ng paglaki",
+                    "Walang sugat o pagbabago ng kulay",
+                    "Malakas at tuwid na tangkay"
+                ],
+                "treatment": [
+                    "Walang kinakailangang gamot",
+                    "Ipagpatuloy ang mabuting kagawian sa pagsasaka",
+                    "Regular na suriin para sa maagang pagtuklas ng sakit",
+                    "Panatilihin ang mga pag-iingat"
+                ],
+                "prevention": [
+                    "Gumamit ng sertipikadong de-kalidad na binhi",
+                    "Magsagawa ng integrated pest management",
+                    "Panatilihing balanse ang nutrisyon",
+                    "Siguraduhing maayos ang pamamahala ng tubig"
+                ]
+            }
         },
         {
             "name": "Rice Hispa",
@@ -2192,7 +2584,28 @@ elif st.session_state.page == "library":
                 "Use hispa-resistant varieties",
                 "Practice proper field sanitation"
             ],
-            "image": "https://wordpress-cdn-echoupaladvisory.echoupal.co.in/wp-content/uploads/2022/03/ricehipsa2-1.jpg"
+            "image": "https://wordpress-cdn-echoupaladvisory.echoupal.co.in/wp-content/uploads/2022/03/ricehipsa2-1.jpg",
+            "tagalog": {
+                "description": "Isang peste na nagdudulot ng puting guhit sa dahon dahil sa uod na kumakain sa pagitan ng ibabaw ng dahon.",
+                "symptoms": [
+                    "Puting pahabang guhit sa dahon",
+                    "Magkakaparalelong marka ng pagkain",
+                    "Tuyong at papel na anyo ng dahon",
+                    "Bumabang photosynthesis"
+                ],
+                "treatment": [
+                    "Maglagay ng angkop na insecticide",
+                    "Alisin ang labis na nahawaang dahon",
+                    "Bahaiin ang bukid para patayin ang pupae",
+                    "Gumamit ng light trap para sa adult"
+                ],
+                "prevention": [
+                    "Iwasan ang masyadong malapit na pagitan ng tanim",
+                    "Alisin ang mga damo sa paligid ng bukid",
+                    "Gumamit ng hispa-resistant na uri",
+                    "Magsagawa ng tamang kalinisan ng bukid"
+                ]
+            }
         },
         {
             "name": "False Smut",
@@ -2217,7 +2630,28 @@ elif st.session_state.page == "library":
                 "Maintain proper plant spacing",
                 "Practice crop rotation"
             ],
-            "image": "https://tse2.mm.bing.net/th/id/OIP.TZd75GWVA5aL_qxqLemfMAHaFj?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3"
+            "image": "https://tse2.mm.bing.net/th/id/OIP.TZd75GWVA5aL_qxqLemfMAHaFj?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3",
+            "tagalog": {
+                "description": "Isang sakit na dulot ng fungus na nakakaapekto sa butil ng palay, bumubuo ng malalaking berde-itim na bola ng spore sa panicle.",
+                "symptoms": [
+                    "Berde-itim na mabalahibo ng bola sa butil",
+                    "Lumalaki ang bawat butil",
+                    "Bola ng spore na may pulbos",
+                    "Bumabang kalidad ng butil"
+                ],
+                "treatment": [
+                    "Maglagay ng fungicide sa panahon ng pamumulaklak",
+                    "Alisin at sunugin ang nahawaang panicle",
+                    "Pagbutihin ang drainage ng bukid",
+                    "Bawasan ang kahalumigmigan sa bukid"
+                ],
+                "prevention": [
+                    "Gumamit ng resistant na uri",
+                    "Iwasan ang labis na nitrogen fertilization",
+                    "Panatilihing tamang pagitan ng halaman",
+                    "Magsagawa ng crop rotation"
+                ]
+            }
         },
         {
             "name": "Leaf Smut",
@@ -2242,7 +2676,28 @@ elif st.session_state.page == "library":
                 "Avoid overhead irrigation",
                 "Practice balanced fertilization"
             ],
-            "image": "https://bugwoodcloud.org/images/768x512/5390514.jpg"
+            "image": "https://bugwoodcloud.org/images/768x512/5390514.jpg",
+            "tagalog": {
+                "description": "Isang minor na sakit na dulot ng fungus na nagdudulot ng maliliit na itim na angular na batik sa dahon.",
+                "symptoms": [
+                    "Maliliit na angular na itim na batik sa dahon",
+                    "Kalat ang batik sa ibabaw ng dahon",
+                    "Maliit na epekto sa ani",
+                    "Mas karaniwan sa basang kondisyon"
+                ],
+                "treatment": [
+                    "Kadalasan ay walang kinakailangang gamot",
+                    "Pagbutihin ang drainage ng bukid kung malubha",
+                    "Bawasan ang tagal ng pagkabasa ng dahon",
+                    "Maglagay ng fungicide kung laganap"
+                ],
+                "prevention": [
+                    "Gumamit ng de-kalidad na binhi",
+                    "Panatilihing maayos ang drainage ng bukid",
+                    "Iwasan ang overhead irrigation",
+                    "Magsagawa ng balanseng fertilization"
+                ]
+            }
         },
         {
             "name": "Leaf Scald",
@@ -2267,7 +2722,28 @@ elif st.session_state.page == "library":
                 "Practice proper spacing",
                 "Maintain field sanitation"
             ],
-            "image": "https://bugwoodcloud.org/images/768x512/5390511.jpg"
+            "image": "https://bugwoodcloud.org/images/768x512/5390511.jpg",
+            "tagalog": {
+                "description": "Isang sakit na dulot ng fungus na nagdudulot ng natatanging banda na sugat sa dahon ng palay.",
+                "symptoms": [
+                    "Magpapalit-palit na liwanag at madilim na banda sa dahon",
+                    "Nagsisimula ang sugat mula sa dulo ng dahon",
+                    "Paninilaw ng naapektuhang lugar",
+                    "Maagaang pagkatuyo ng dahon"
+                ],
+                "treatment": [
+                    "Maglagay ng angkop na fungicide",
+                    "Alisin ang nahawaang basura ng halaman",
+                    "Pagbutihin ang sirkulasyon ng hangin",
+                    "Siguraduhing maayos ang drainage"
+                ],
+                "prevention": [
+                    "Gumamit ng resistant na uri",
+                    "Iwasan ang labis na nitrogen",
+                    "Magsagawa ng tamang pagitan",
+                    "Panatilihin ang kalinisan ng bukid"
+                ]
+            }
         },
         {
             "name": "Narrow Brown Leaf Spot",
@@ -2292,7 +2768,28 @@ elif st.session_state.page == "library":
                 "Ensure proper drainage",
                 "Practice crop rotation"
             ],
-            "image": "https://tse1.mm.bing.net/th/id/OIP.YeSPfVgbqHLbF54KLRtl9gHaE9?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3"
+            "image": "https://tse1.mm.bing.net/th/id/OIP.YeSPfVgbqHLbF54KLRtl9gHaE9?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3",
+            "tagalog": {
+                "description": "Isang minor na sakit ng batik sa dahon na nagdudulot ng makitid na kayumangging sugat sa dahon ng palay.",
+                "symptoms": [
+                    "Makitid na kayumangging tuwid na sugat",
+                    "Sugat na kahanay ng ugat ng dahon",
+                    "Dilaw na bilog sa paligid ng batik",
+                    "Maliit na epekto sa ani"
+                ],
+                "treatment": [
+                    "Kadalasan ay walang kinakailangang gamot",
+                    "Maglagay ng fungicide kung malubha",
+                    "Alisin ang labis na nahawaang dahon",
+                    "Pagbutihin ang kondisyon ng bukid"
+                ],
+                "prevention": [
+                    "Gumamit ng malusog na binhi",
+                    "Panatilihing balanse ang nutrisyon",
+                    "Siguraduhing maayos ang drainage",
+                    "Magsagawa ng crop rotation"
+                ]
+            }
         },
         {
             "name": "Rice Blast",
@@ -2317,7 +2814,28 @@ elif st.session_state.page == "library":
                 "Maintain proper water management",
                 "Practice crop rotation"
             ],
-            "image": "https://tse2.mm.bing.net/th/id/OIP.N5zA4MwJYeI20Q2YGCme2wHaE9?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3"
+            "image": "https://tse2.mm.bing.net/th/id/OIP.N5zA4MwJYeI20Q2YGCme2wHaE9?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3",
+            "tagalog": {
+                "description": "Ang Rice Blast ay isa sa pinakamarahas na sakit ng palay, nagdudulot ng malaking pagkalugi sa ani sa buong mundo.",
+                "symptoms": [
+                    "Hugis-diyamante na sugat sa dahon",
+                    "Puti hanggang abong gitna na may kayumangging gilid",
+                    "Sugat sa node ng dahon at panicle",
+                    "Pagkabulok ng leeg sa malubhang kaso"
+                ],
+                "treatment": [
+                    "Maglagay ng fungicide na may tricyclazole o azoxystrobin",
+                    "Alisin ang nahawaang basura ng halaman",
+                    "Panatilihing maayos ang drainage ng bukid",
+                    "Gumamit ng resistant na uri"
+                ],
+                "prevention": [
+                    "Gumamit ng resistant na uri",
+                    "Iwasan ang labis na nitrogen fertilization",
+                    "Panatilihing maayos ang pamamahala ng tubig",
+                    "Magsagawa ng crop rotation"
+                ]
+            }
         },
         {
             "name": "Rice Stripes",
@@ -2342,7 +2860,28 @@ elif st.session_state.page == "library":
                 "Adjust planting dates",
                 "Remove volunteer rice plants"
             ],
-            "image": "https://tse2.mm.bing.net/th/id/OIP.hPJMjM6glnzy2itgSj9H6QHaE8?cb=12&w=1500&h=1000&rs=1&pid=ImgDetMain&o=7&rm=3"
+            "image": "https://tse2.mm.bing.net/th/id/OIP.hPJMjM6glnzy2itgSj9H6QHaE8?cb=12&w=1500&h=1000&rs=1&pid=ImgDetMain&o=7&rm=3",
+            "tagalog": {
+                "description": "Isang viral na sakit na dinadala ng maliit na kayumangging planthopper na nagdudulot ng chlorotic na guhit sa dahon.",
+                "symptoms": [
+                    "Dilaw o chlorotic na guhit sa dahon",
+                    "Sunog ang paglaki ng halaman",
+                    "Bumabang tillering",
+                    "Hindi kumpleto ang paglabas ng panicle"
+                ],
+                "treatment": [
+                    "Alisin kaagad ang nahawaang halaman",
+                    "Kontrolin ang planthopper vector",
+                    "Walang direktang gamot sa viral infection",
+                    "Gumamit ng resistant na uri"
+                ],
+                "prevention": [
+                    "Magtanim ng virus-resistant na uri",
+                    "Kontrolin ang populasyon ng planthopper",
+                    "Ayusin ang petsa ng pagtatanim",
+                    "Alisin ang kusang tumutubo na palay"
+                ]
+            }
         },
         {
             "name": "Rice Tungro",
@@ -2367,23 +2906,62 @@ elif st.session_state.page == "library":
                 "Adjust planting dates to avoid peak vector activity",
                 "Remove weeds that host leafhoppers"
             ],
-            "image": "https://tse1.mm.bing.net/th/id/OIP.rtDAwQ8P15ghoq0nTNZu3gHaFj?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3"
+            "image": "https://tse1.mm.bing.net/th/id/OIP.rtDAwQ8P15ghoq0nTNZu3gHaFj?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3",
+            "tagalog": {
+                "description": "Isang viral na sakit na dinadala ng berdeng leafhopper, nagdudulot ng malubhang pagkasunog at pagkawala ng ani.",
+                "symptoms": [
+                    "Dilaw o orange-dilaw na pagbabago ng kulay ng dahon",
+                    "Sunog ang paglaki ng halaman",
+                    "Bumabang bilang ng tillers",
+                    "Hindi kumpleto ang pagbuo ng panicle"
+                ],
+                "treatment": [
+                    "Alisin at sirain kaagad ang nahawaang halaman",
+                    "Kontrolin ang leafhopper vector gamit ang insecticide",
+                    "Walang direktang gamot para sa viral infection",
+                    "Magtanim muli ng resistant na uri kung malubha"
+                ],
+                "prevention": [
+                    "Magtanim ng tungro-resistant na uri",
+                    "Kontrolin ang populasyon ng berdeng leafhopper",
+                    "Ayusin ang petsa ng pagtatanim para maiwasan ang peak vector activity",
+                    "Alisin ang damo na host ng leafhopper"
+                ]
+            }
         }
     ]
     
     # Filter diseases based on search
     filtered_diseases = diseases
-    if search and search.strip():  # Check if search has actual text
+    if search and search.strip():
         search_lower = search.lower().strip()
         filtered_diseases = [
             d for d in diseases 
             if search_lower in d['name'].lower() or search_lower in d['scientific'].lower()
         ]
-    
+
+
     # Display filtered diseases
     if filtered_diseases:
         for disease in filtered_diseases:
+            # Create unique key for this disease's translation state
+            disease_key = disease['name'].replace(" ", "_").lower()
+            
             with st.expander(f"**{disease['name']}** - *{disease['scientific']}*", expanded=False):
+                # Translation button at the top
+                col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 3])
+                with col_btn1:
+                    if st.button("\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Tagalog", key=f"tagalog_{disease_key}", use_container_width=True):
+                        st.session_state.translations[disease_key] = "tagalog"
+                        st.rerun()
+                with col_btn2:
+                    if st.button("\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0English", key=f"english_{disease_key}", use_container_width=True):
+                        st.session_state.translations[disease_key] = "english"
+                        st.rerun()
+                
+                # Check current language
+                current_lang = st.session_state.translations.get(disease_key, "english")
+                
                 col1, col2 = st.columns([1, 3])
                 
                 with col1:
@@ -2392,47 +2970,62 @@ elif st.session_state.page == "library":
                 with col2:
                     # Severity badge
                     severity_class = f"severity-{disease['severity'].lower()}"
+                    severity_label = "Severity" if current_lang == "english" else "Kalubhaan"
                     st.markdown(f"""
                     <div class="{severity_class}" style="display: inline-block; padding: 4px 12px; border-radius: 15px; font-size: 12px; font-weight: bold;">
-                        Severity: {disease['severity']}
+                        {severity_label}: {disease['severity']}
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # Description - LEFT ALIGNED
-                st.markdown(f"<p style='margin: 15px 0; color: #424242; text-align: left;'>{disease['description']}</p>", unsafe_allow_html=True)
+                # Description - Display based on language
+                if current_lang == "tagalog":
+                    description = disease['tagalog']['description']
+                else:
+                    description = disease['description']
+                
+                st.markdown(f"<p style='margin: 15px 0; color: #424242; text-align: left;'>{description}</p>", unsafe_allow_html=True)
                 
                 # Symptoms
-                st.markdown("""
+                symptoms_title = "Symptoms" if current_lang == "english" else "Mga Sintomas"
+                st.markdown(f"""
                 <div class="info-title">
                     <img src="https://cdn-icons-png.flaticon.com/128/2755/2755944.png" width="20" style="margin-right: 8px;">
-                    Symptoms
+                    {symptoms_title}
                 </div>
                 """, unsafe_allow_html=True)
-                for symptom in disease['symptoms']:
+                
+                symptoms_list = disease['symptoms'] if current_lang == "english" else disease['tagalog']['symptoms']
+                for symptom in symptoms_list:
                     st.markdown(f"<div style='text-align: left;'>• {symptom}</div>", unsafe_allow_html=True)
                 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
                 # Treatment
-                st.markdown("""
+                treatment_title = "Treatment" if current_lang == "english" else "Gamot"
+                st.markdown(f"""
                 <div class="info-title">
                     <img src="https://cdn-icons-png.flaticon.com/128/17085/17085104.png" width="20" style="margin-right: 8px;">
-                    Treatment
+                    {treatment_title}
                 </div>
                 """, unsafe_allow_html=True)
-                for treatment in disease['treatment']:
+                
+                treatment_list = disease['treatment'] if current_lang == "english" else disease['tagalog']['treatment']
+                for treatment in treatment_list:
                     st.markdown(f"<div style='text-align: left;'>• {treatment}</div>", unsafe_allow_html=True)
                 
                 st.markdown("<br>", unsafe_allow_html=True)
                 
                 # Prevention
-                st.markdown("""
+                prevention_title = "Prevention" if current_lang == "english" else "Pag-iwas"
+                st.markdown(f"""
                 <div class="info-title">
                     <img src="https://cdn-icons-png.flaticon.com/128/3774/3774299.png" width="20" style="margin-right: 8px;">
-                    Prevention
+                    {prevention_title}
                 </div>
                 """, unsafe_allow_html=True)
-                for prevention in disease['prevention']:
+                
+                prevention_list = disease['prevention'] if current_lang == "english" else disease['tagalog']['prevention']
+                for prevention in prevention_list:
                     st.markdown(f"<div style='text-align: left;'>• {prevention}</div>", unsafe_allow_html=True)
     else:
         st.info("No diseases found matching your search.")
@@ -2455,5 +3048,5 @@ elif st.session_state.page == "library":
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-     # ===== BOTTOM NAVIGATION =====
+    # ===== BOTTOM NAVIGATION =====
     show_bottom_nav('home')

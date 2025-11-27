@@ -5,3 +5,4 @@ supabase
 python-dotenv
 numpy
 supabase
+matplotlib
